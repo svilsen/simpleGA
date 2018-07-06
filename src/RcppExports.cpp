@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // GACppEigen
-Eigen::Vector2d GACppEigen(const int& population_size, const int& bitstring_size, const double& lower, const double& upper, const int& maximum_number_of_iterations, const double& tolerance, const int& seed);
-RcppExport SEXP _simpleGA_GACppEigen(SEXP population_sizeSEXP, SEXP bitstring_sizeSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP maximum_number_of_iterationsSEXP, SEXP toleranceSEXP, SEXP seedSEXP) {
+Eigen::Vector2d GACppEigen(const int& population_size, const int& bitstring_size, const double& lower, const double& upper, const int& maximum_number_of_iterations, const double& tolerance, const int& maximum_number_of_iterations_equal);
+RcppExport SEXP _simpleGA_GACppEigen(SEXP population_sizeSEXP, SEXP bitstring_sizeSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP maximum_number_of_iterationsSEXP, SEXP toleranceSEXP, SEXP maximum_number_of_iterations_equalSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -18,8 +18,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double& >::type upper(upperSEXP);
     Rcpp::traits::input_parameter< const int& >::type maximum_number_of_iterations(maximum_number_of_iterationsSEXP);
     Rcpp::traits::input_parameter< const double& >::type tolerance(toleranceSEXP);
-    Rcpp::traits::input_parameter< const int& >::type seed(seedSEXP);
-    rcpp_result_gen = Rcpp::wrap(GACppEigen(population_size, bitstring_size, lower, upper, maximum_number_of_iterations, tolerance, seed));
+    Rcpp::traits::input_parameter< const int& >::type maximum_number_of_iterations_equal(maximum_number_of_iterations_equalSEXP);
+    rcpp_result_gen = Rcpp::wrap(GACppEigen(population_size, bitstring_size, lower, upper, maximum_number_of_iterations, tolerance, maximum_number_of_iterations_equal));
     return rcpp_result_gen;
 END_RCPP
 }

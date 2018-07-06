@@ -11,11 +11,11 @@
 #' @param upper The upper bound of the interval.
 #' @param maximum_number_of_iterations The maximum allowed number of interations.
 #' @param tolerance The convergence tolerance.
-#' @param seed A random initial seed.
+#' @param maximum_number_of_iterations_equal The number of iterations without changing the fittest individual before forced convergence.
 #' 
 #' @return A list with two elements: the fittest decoded individual found in the entire run and its fitness.
 #' @export
-GACppEigen <- function(population_size, bitstring_size, lower, upper, maximum_number_of_iterations, tolerance, seed) {
-    .Call('_simpleGA_GACppEigen', PACKAGE = 'simpleGA', population_size, bitstring_size, lower, upper, maximum_number_of_iterations, tolerance, seed)
+GACppEigen <- function(population_size, bitstring_size, lower, upper, maximum_number_of_iterations, tolerance, maximum_number_of_iterations_equal) {
+    .Call('_simpleGA_GACppEigen', PACKAGE = 'simpleGA', population_size, bitstring_size, lower, upper, maximum_number_of_iterations, tolerance, maximum_number_of_iterations_equal)
 }
 

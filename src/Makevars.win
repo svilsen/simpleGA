@@ -1,0 +1,6 @@
+# Added C++11
+CC = gcc
+CXX = g++
+
+CXX_STD = CXX11
+CXX11_FLAGS = -std=c++0x
