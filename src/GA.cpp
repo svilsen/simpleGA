@@ -147,12 +147,14 @@ struct Population
     
     void crossover_mutation(const Eigen::MatrixXd & _individuals) 
     {
-        const double & probability_of_mutation = 1 / bitstring_size;
+        Rcpp::Rcout << _individuals << "\n";
         
+        const double & probability_of_mutation = 1 / bitstring_size;
+        individuals = Eigen::MatrixXd(_individuals.rows(), _individuals.cols());
         for (int i = 0; i < population_size; i++) 
         {
             int c = random_variate.generate_uniform_int();
-            for (int j = 1; j < bitstring_size; j++) 
+            for (int j = 0; j < bitstring_size; j++) 
             {
                 // Crossover
                 if (j <= c) 
@@ -182,28 +184,28 @@ struct Population
 Eigen::VectorXd proportionalSum(const Eigen::VectorXd & x)
 {
     const std::size_t N = x.size();
-    Eigen::VectorXd partialSum(N + 1);
+    Eigen::VectorXd proportionalSum(N + 1);
     
-    double sum = 0.0;
-    partialSum[0] = 0;
+    proportionalSum[0] = 0;
     for (std::size_t i = 1; i < N + 1; i++)
     {
-        partialSum[i] = x[i - 1] + partialSum[i - 1];
+        proportionalSum[i] = std::exp(x[i - 1]) + proportionalSum[i - 1];
     }
     
-    const Eigen::VectorXd & proportionalSum = partialSum / sum;
+    proportionalSum = proportionalSum / proportionalSum[N];
     return proportionalSum;
 }
 
 
 void select_parents(const Population & current_population, Eigen::MatrixXd & parents, RandomVariates & random_variate) 
 {
+    const int & N = current_population.population_size;
     const Eigen::VectorXd & proportionalSumFitness = proportionalSum(current_population.individuals_fitness);
-    for (int i = 0; i < 2 * current_population.population_size; i++) 
+    for (int i = 0; i < 2 * N; i++) 
     {
-        const double & u = random_variate.generate_uniform_real();
+        double u = random_variate.generate_uniform_real();
         int index = 0;
-        while ((proportionalSumFitness[index + 1] < u) & ((index + 1) < current_population.population_size))
+        while ((proportionalSumFitness[index + 1] < u) & ((index + 1) < N)) 
             index++;
         
         parents.row(i) = current_population.individuals.row(index);

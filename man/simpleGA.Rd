@@ -9,5 +9,5 @@
 A short and simple implementation of a genetic algorithm for maximising univariate functions.
 }
 \author{
-S. B. Vilsen
+Søren B. Vilsen
 }
