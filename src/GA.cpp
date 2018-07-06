@@ -82,6 +82,7 @@ struct Population
     
 };
 
+
 //' @title GA (Eigen)
 //' 
 //' @description Simple genetic algorithm for maximising function. Implemented using the boost and Eigen libraries.
