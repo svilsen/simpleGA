@@ -6,9 +6,9 @@
 
 using namespace Rcpp;
 
-// GACppEigen
-Eigen::Vector2d GACppEigen(const int& population_size, const int& bitstring_size, const double& lower, const double& upper, const int& maximum_number_of_iterations, const double& tolerance, const int& maximum_number_of_iterations_equal);
-RcppExport SEXP _simpleGA_GACppEigen(SEXP population_sizeSEXP, SEXP bitstring_sizeSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP maximum_number_of_iterationsSEXP, SEXP toleranceSEXP, SEXP maximum_number_of_iterations_equalSEXP) {
+// GACpp
+Eigen::Vector2d GACpp(const int& population_size, const int& bitstring_size, const double& lower, const double& upper, const int& maximum_number_of_iterations, const double& tolerance, const int& maximum_number_of_iterations_equal, const bool& trace);
+RcppExport SEXP _simpleGA_GACpp(SEXP population_sizeSEXP, SEXP bitstring_sizeSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP maximum_number_of_iterationsSEXP, SEXP toleranceSEXP, SEXP maximum_number_of_iterations_equalSEXP, SEXP traceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -19,13 +19,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const int& >::type maximum_number_of_iterations(maximum_number_of_iterationsSEXP);
     Rcpp::traits::input_parameter< const double& >::type tolerance(toleranceSEXP);
     Rcpp::traits::input_parameter< const int& >::type maximum_number_of_iterations_equal(maximum_number_of_iterations_equalSEXP);
-    rcpp_result_gen = Rcpp::wrap(GACppEigen(population_size, bitstring_size, lower, upper, maximum_number_of_iterations, tolerance, maximum_number_of_iterations_equal));
+    Rcpp::traits::input_parameter< const bool& >::type trace(traceSEXP);
+    rcpp_result_gen = Rcpp::wrap(GACpp(population_size, bitstring_size, lower, upper, maximum_number_of_iterations, tolerance, maximum_number_of_iterations_equal, trace));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_simpleGA_GACppEigen", (DL_FUNC) &_simpleGA_GACppEigen, 7},
+    {"_simpleGA_GACpp", (DL_FUNC) &_simpleGA_GACpp, 8},
     {NULL, NULL, 0}
 };
 

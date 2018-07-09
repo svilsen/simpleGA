@@ -6,6 +6,7 @@
 #' @author Søren B. Vilsen
 #' @import Rcpp RcppEigen BH
 #' @importFrom Rcpp evalCpp
+#' @importFrom stats rbinom rmultinom
 #' @useDynLib simpleGA
 #' @name simpleGA
 NULL  

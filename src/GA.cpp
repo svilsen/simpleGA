@@ -38,10 +38,13 @@ struct Interval
     double lower;
     double upper;
     
-    Interval(const double & _lower, const double & _upper);
+    Interval(const double & _lower, const double & _upper) : lower(_lower), upper(_upper) { }; 
 };
 
-Interval::Interval(const double & _lower, const double & _upper) : lower(_lower), upper(_upper) {}; 
+double fitness(const double & x) 
+{
+    return x + std::abs(std::sin(4.0 * x));
+}
 
 struct Population 
 {
@@ -102,7 +105,7 @@ struct Population
     
     Population(const Eigen::MatrixXd & _individuals, const Eigen::VectorXd & _individuals_decoded,
                const Eigen::VectorXd & _individuals_fitness, const Eigen::Vector2d _fittest_individual,
-               RandomVariates & _random_variate, Interval & _interval) :
+               RandomVariates & _random_variate, const Interval & _interval) :
         population_size(_individuals.rows()), bitstring_size(_individuals.cols()),
         random_variate(_random_variate), interval(_interval), individuals(_individuals),
         individuals_decoded(_individuals_decoded), individuals_fitness(_individuals_fitness),
@@ -126,13 +129,11 @@ struct Population
         return decoded;
     }
     
-    double fitness(const double & x) 
-    {
-        return x + std::abs(std::sin(4.0 * x));
-    }
-    
     void decode_fitness_population() 
     {
+        fittest_individual = Eigen::Vector2d();
+        fittest_individual << -HUGE_VAL, -HUGE_VAL;
+        
         individuals_decoded = Eigen::VectorXd(population_size);
         individuals_fitness = Eigen::VectorXd(population_size);
         for (int i = 0; i < population_size; i++) 
@@ -142,38 +143,48 @@ struct Population
             
             const double & individuals_fitness_i = fitness(individuals_decoded_i);
             individuals_fitness[i] = individuals_fitness_i;
+            
+            if (fittest_individual[1] < individuals_fitness_i) 
+            {
+                fittest_individual[0] = individuals_decoded_i;
+                fittest_individual[1] = individuals_fitness_i;
+            }
+            
         }
     }
     
     void crossover_mutation(const Eigen::MatrixXd & _individuals) 
     {
-        Rcpp::Rcout << _individuals << "\n";
-        
-        const double & probability_of_mutation = 1 / bitstring_size;
-        individuals = Eigen::MatrixXd(_individuals.rows(), _individuals.cols());
-        for (int i = 0; i < population_size; i++) 
+        const double probability_of_mutation = 1.0 / bitstring_size;
+        individuals = Eigen::MatrixXd::Zero(_individuals.rows(), _individuals.cols());
+
+        const int & half_population_size = population_size / 2.0;
+        for (int i = 0; i < half_population_size; i++) 
         {
             int c = random_variate.generate_uniform_int();
             for (int j = 0; j < bitstring_size; j++) 
             {
                 // Crossover
-                if (j <= c) 
+                if (j <= c)
                 {
                     individuals(2 * i, j) = _individuals(2 * i, j);
                     individuals(2 * i + 1, j) = _individuals(2 * i + 1, j);
                 }
-                else 
+                else
                 {
                     individuals(2 * i, j) = _individuals(2 * i + 1, j);
                     individuals(2 * i + 1, j) = _individuals(2 * i, j);
                 }
                 
                 // Mutation
-                double u = random_variate.generate_uniform_real();
-                if (u < probability_of_mutation) 
+                for (int k = 0; k < 2; k++) 
                 {
-                    const int & individuals_ij = individuals(i, j);
-                    individuals(i, j) = (individuals_ij + 1) % 2;
+                    double u = random_variate.generate_uniform_real();
+                    if (u < probability_of_mutation)
+                    {
+                        const int & individuals_kj = individuals(2 * i + k, j);
+                        individuals(2 * i + k, j) = (individuals_kj + 1) % 2;
+                    }
                 }
             }
         }
@@ -223,12 +234,11 @@ std::vector<int> sorted_index(const Eigen::VectorXd & x)
     return x_sorted;
 }
 
-Population survivor_selection(Population & current_population, const Population & children, RandomVariates & random_variate) 
+void survivor_selection(Population & current_population, const Population & children, RandomVariates & random_variate) 
 {
-    Eigen::VectorXd total_fitness(3 * current_population.population_size);
-    total_fitness.segment(0.0, current_population.population_size) = current_population.individuals_fitness;
-    total_fitness.segment(current_population.population_size, 2 * current_population.population_size) = 
-        children.individuals_fitness;
+    Eigen::VectorXd total_fitness(current_population.population_size + children.population_size);
+    total_fitness << current_population.individuals_fitness, 
+                     children.individuals_fitness;
     
     std::vector<int> sorted_fitness = sorted_index(total_fitness);
     
@@ -253,19 +263,18 @@ Population survivor_selection(Population & current_population, const Population 
         }
     }
     
-    Eigen::Vector2d fittest_individual = current_population.fittest_individual;
-    if (fittest_individual[1] < new_individuals_fitness[0]) 
+    if (current_population.fittest_individual[1] < new_individuals_fitness[0]) 
     {
-        fittest_individual[0] = new_individuals_decoded[0];
-        fittest_individual[1] = new_individuals_fitness[0];
+        current_population.fittest_individual[0] = new_individuals_decoded[0];
+        current_population.fittest_individual[1] = new_individuals_fitness[0];
     }
     
-    Population new_population(new_individuals, new_individuals_decoded, new_individuals_fitness, 
-                              fittest_individual, random_variate, current_population.interval);
-    return new_population;
+    current_population.individuals = new_individuals;
+    current_population.individuals_decoded = new_individuals_decoded;
+    current_population.individuals_fitness = new_individuals_fitness;
 }
 
-//' @title GA (Eigen)
+//' @title GA (Cpp)
 //' 
 //' @description Simple genetic algorithm for maximising function. Implemented using the boost and Eigen libraries.
 //' 
@@ -276,14 +285,16 @@ Population survivor_selection(Population & current_population, const Population 
 //' @param maximum_number_of_iterations The maximum allowed number of interations.
 //' @param tolerance The convergence tolerance.
 //' @param maximum_number_of_iterations_equal The number of iterations without changing the fittest individual before forced convergence.
+//' @param trace TRUE/FALSE: Show trace?
 //' 
 //' @return A list with two elements: the fittest decoded individual found in the entire run and its fitness.
 //' @export
+//' @example inst/examples/GACpp.R
 //[[Rcpp::export()]]
-Eigen::Vector2d GACppEigen(const int & population_size, const int & bitstring_size,
-                           const double & lower, const double & upper,
-                           const int & maximum_number_of_iterations, const double & tolerance,
-                           const int & maximum_number_of_iterations_equal) 
+Eigen::Vector2d GACpp(const int & population_size, const int & bitstring_size,
+                      const double & lower, const double & upper,
+                      const int & maximum_number_of_iterations, const double & tolerance,
+                      const int & maximum_number_of_iterations_equal, const bool & trace = false) 
 {
     Interval interval(lower, upper);
     RandomVariates random_variates(bitstring_size);
@@ -295,6 +306,7 @@ Eigen::Vector2d GACppEigen(const int & population_size, const int & bitstring_si
     while (!converged) 
     {
         double fitness_old = population.fittest_individual[1];
+        
         // Parent selection
         Eigen::MatrixXd parents(2 * population_size, bitstring_size);
         select_parents(population, parents, random_variates);
@@ -303,7 +315,7 @@ Eigen::Vector2d GACppEigen(const int & population_size, const int & bitstring_si
         Population children(parents, random_variates, interval);
         
         // Survivor selection
-        Population population = survivor_selection(population, children, random_variates);
+        survivor_selection(population, children, random_variates);
         
         double fitness_change = std::abs(population.fittest_individual[1] - fitness_old);
         if (fitness_change < tolerance) 
@@ -311,7 +323,14 @@ Eigen::Vector2d GACppEigen(const int & population_size, const int & bitstring_si
         else 
             j = 0;
         
+        i++;
         converged = (i > maximum_number_of_iterations) | (j > maximum_number_of_iterations_equal);
+        
+        if (trace)
+            Rcpp::Rcout << "Iterations (total): " << i << "\n"
+                        << "Iterations (equal): " << j << "\n" 
+                        << "Fitness difference: " << fitness_change << "\n"
+                        << "-----------------------------\n";
     }
     
     return population.fittest_individual;
