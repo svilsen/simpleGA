@@ -28,7 +28,7 @@ struct RandomVariates
         rng(std::time(0)),
         uniform_real(), generate_uniform_real(rng, uniform_real),
         uniform_int(0, N - 1), generate_uniform_int(rng, uniform_int),
-        uniform_binary(0, 1), generate_uniform_binary(rng, uniform_binary) {};;
+        uniform_binary(0, 1), generate_uniform_binary(rng, uniform_binary) { };
 };
 
 

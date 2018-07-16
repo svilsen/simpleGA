@@ -65,6 +65,9 @@ survivor_selection <- function(population, children, lower, upper) {
     sorted_index = order(total_population, decreasing = TRUE)[1:N]
     
     individuals = rbind(population$Individuals, children)[sorted_index, ]
+    if (N == 1) {
+        individuals = matrix(individuals, nrow = N)
+    }
     
     fitness_population = total_population[sorted_index]
     

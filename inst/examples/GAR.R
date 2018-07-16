@@ -1,7 +1,7 @@
 ###############################################################
 ############ Simple example using R implementation ############
 ###############################################################
-population_size = 10
+population_size = 1
 bitstring_size = 10
 
 lower = -pi
