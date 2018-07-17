@@ -1,50 +1,14 @@
 #include <Rcpp.h>
 #include <RcppEigen.h>
 
-#include <ctime>
-#include <algorithm>
+#include "auxiliary.hpp"
+#include "random_variate_generators.hpp"
+#include "bounded_interval.hpp"
 
-#include <boost/random/variate_generator.hpp>
-#include <boost/generator_iterator.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/uniform_01.hpp>
-#include <boost/random/uniform_int_distribution.hpp>
-#include <boost/random/uniform_real_distribution.hpp>
-
-struct RandomVariates 
+double fitness(const double & x) 
 {
-    boost::mt19937 rng;
-    
-    boost::random::uniform_01<> uniform_real;
-    boost::variate_generator<boost::mt19937 &, boost::random::uniform_01<> > generate_uniform_real;
-    
-    boost::random::uniform_int_distribution<> uniform_int;
-    boost::variate_generator<boost::mt19937 &, boost::random::uniform_int_distribution<> > generate_uniform_int;
-    
-    boost::random::uniform_int_distribution<> uniform_binary;
-    boost::variate_generator<boost::mt19937 &, boost::random::uniform_int_distribution<> > generate_uniform_binary;
-    
-    RandomVariates(int N) : 
-        rng(std::time(0)),
-        uniform_real(), generate_uniform_real(rng, uniform_real),
-        uniform_int(0, N - 1), generate_uniform_int(rng, uniform_int),
-        uniform_binary(0, 1), generate_uniform_binary(rng, uniform_binary) { };
-};
-
-
-
-struct Interval 
-{
-    double lower;
-    double upper;
-    
-    Interval(const double & _lower, const double & _upper) : lower(_lower), upper(_upper) { }; 
-};
-
-// double fitness(const double & x) 
-// {
-//     return x + std::abs(std::sin(4.0 * x));
-// }
+    return x + std::abs(std::sin(4.0 * x));
+}
 
 struct Population 
 {
@@ -59,13 +23,11 @@ struct Population
     Eigen::VectorXd individuals_fitness;
     
     Eigen::Vector2d fittest_individual;
-    Rcpp::Function fitness;
     
     // Constructors
     Population(const int & _population_size, const int & _bitstring_size, 
-               RandomVariates & _random_variate, Interval & _interval, Rcpp::Function f) :
-        population_size(_population_size), bitstring_size(_bitstring_size), random_variate(_random_variate), interval(_interval), 
-        fitness(f)
+               RandomVariates & _random_variate, Interval & _interval) :
+        population_size(_population_size), bitstring_size(_bitstring_size), random_variate(_random_variate), interval(_interval)
     {
         individuals = Eigen::MatrixXd(population_size, bitstring_size);
         individuals_decoded = Eigen::VectorXd(population_size);
@@ -81,8 +43,8 @@ struct Population
             const double & individuals_decoded_i = decode(individuals.row(i));
             individuals_decoded[i] = individuals_decoded_i;
             
-            Rcpp::NumericVector individuals_fitness_i = fitness(individuals_decoded[i]);
-            individuals_fitness[i] = individuals_fitness_i[0];
+            const double & individuals_fitness_i = fitness(individuals_decoded[i]);
+            individuals_fitness[i] = individuals_fitness_i;
             if (i == 0) 
             {
                 fittest_individual[0] = individuals_decoded[0];
@@ -97,9 +59,9 @@ struct Population
     }
     
     Population(const Eigen::MatrixXd & _individuals, 
-               RandomVariates & _random_variate, Interval & _interval, Rcpp::Function f) :
+               RandomVariates & _random_variate, Interval & _interval) :
         population_size(_individuals.rows()), bitstring_size(_individuals.cols()), 
-        random_variate(_random_variate), interval(_interval), fitness(f)
+        random_variate(_random_variate), interval(_interval)
     {
         crossover_mutation(_individuals);
         decode_fitness_population();
@@ -107,11 +69,11 @@ struct Population
     
     Population(const Eigen::MatrixXd & _individuals, const Eigen::VectorXd & _individuals_decoded,
                const Eigen::VectorXd & _individuals_fitness, const Eigen::Vector2d _fittest_individual,
-               RandomVariates & _random_variate, const Interval & _interval, Rcpp::Function f) :
+               RandomVariates & _random_variate, const Interval & _interval) :
         population_size(_individuals.rows()), bitstring_size(_individuals.cols()),
         random_variate(_random_variate), interval(_interval), individuals(_individuals),
         individuals_decoded(_individuals_decoded), individuals_fitness(_individuals_fitness),
-        fittest_individual(_fittest_individual), fitness(f) { }
+        fittest_individual(_fittest_individual) { }
     
     // Fucntions
     double decode(const Eigen::VectorXd & x) 
@@ -143,13 +105,13 @@ struct Population
             const double & individuals_decoded_i = decode(individuals.row(i));
             individuals_decoded[i] = individuals_decoded_i;
             
-            Rcpp::NumericVector individuals_fitness_i = fitness(individuals_decoded_i);
-            individuals_fitness[i] = individuals_fitness_i[0];
+            const double & individuals_fitness_i = fitness(individuals_decoded_i);
+            individuals_fitness[i] = individuals_fitness_i;
             
-            if (fittest_individual[1] < individuals_fitness_i[0]) 
+            if (fittest_individual[1] < individuals_fitness_i) 
             {
                 fittest_individual[0] = individuals_decoded_i;
-                fittest_individual[1] = individuals_fitness_i[0];
+                fittest_individual[1] = individuals_fitness_i;
             }
             
         }
@@ -191,90 +153,63 @@ struct Population
             }
         }
     }
-};
-
-
-Eigen::VectorXd proportionalSum(const Eigen::VectorXd & x)
-{
-    const std::size_t N = x.size();
-    Eigen::VectorXd proportionalSum(N + 1);
     
-    proportionalSum[0] = 0;
-    for (std::size_t i = 1; i < N + 1; i++)
+    void select_parents(Eigen::MatrixXd & parents) 
     {
-        proportionalSum[i] = std::exp(x[i - 1]) + proportionalSum[i - 1];
+        const int & N = population_size;
+        const Eigen::VectorXd & proportionalSumFitness = proportionalSum(individuals_fitness);
+        for (int i = 0; i < 2 * N; i++) 
+        {
+            double u = random_variate.generate_uniform_real();
+            int index = 0;
+            while ((proportionalSumFitness[index + 1] < u) & ((index + 1) < N)) 
+                index++;
+            
+            parents.row(i) = individuals.row(index);
+        }
     }
-    
-    proportionalSum = proportionalSum / proportionalSum[N];
-    return proportionalSum;
-}
 
-
-void select_parents(const Population & current_population, Eigen::MatrixXd & parents, RandomVariates & random_variate) 
-{
-    const int & N = current_population.population_size;
-    const Eigen::VectorXd & proportionalSumFitness = proportionalSum(current_population.individuals_fitness);
-    for (int i = 0; i < 2 * N; i++) 
+    void survivor_selection(const Population & children) 
     {
-        double u = random_variate.generate_uniform_real();
-        int index = 0;
-        while ((proportionalSumFitness[index + 1] < u) & ((index + 1) < N)) 
-            index++;
+        Eigen::VectorXd total_fitness(population_size + children.population_size);
+        total_fitness << individuals_fitness, 
+                         children.individuals_fitness;
         
-        parents.row(i) = current_population.individuals.row(index);
-    }
-}
-
-std::vector<int> sorted_index(const Eigen::VectorXd & x)
-{
-    std::vector<int> x_sorted(x.size());
-    std::iota(x_sorted.begin(), x_sorted.end(), 0);
-    auto comparator = [&x](int i, int j){ return x[i] > x[j]; };
-    
-    std::sort(x_sorted.begin(), x_sorted.end(), comparator);
-    
-    return x_sorted;
-}
-
-void survivor_selection(Population & current_population, const Population & children, RandomVariates & random_variate) 
-{
-    Eigen::VectorXd total_fitness(current_population.population_size + children.population_size);
-    total_fitness << current_population.individuals_fitness, 
-                     children.individuals_fitness;
-    
-    std::vector<int> sorted_fitness = sorted_index(total_fitness);
-    
-    Eigen::MatrixXd new_individuals(current_population.population_size, current_population.bitstring_size);
-    Eigen::VectorXd new_individuals_decoded(current_population.population_size);
-    Eigen::VectorXd new_individuals_fitness(current_population.population_size);
-    for (int i = 0; i < current_population.population_size; i++) 
-    {
-        int index = sorted_fitness[i];
-        if (index < current_population.population_size) 
+        std::vector<int> sorted_fitness = sorted_index(total_fitness);
+        
+        Eigen::MatrixXd new_individuals(population_size, bitstring_size);
+        Eigen::VectorXd new_individuals_decoded(population_size);
+        Eigen::VectorXd new_individuals_fitness(population_size);
+        for (int i = 0; i < population_size; i++) 
         {
-            new_individuals.row(i) = current_population.individuals.row(index);
-            new_individuals_decoded[i] = current_population.individuals_decoded[index];
-            new_individuals_fitness[i] = current_population.individuals_fitness[index];
+            int index = sorted_fitness[i];
+            if (index < population_size) 
+            {
+                new_individuals.row(i) = individuals.row(index);
+                new_individuals_decoded[i] = individuals_decoded[index];
+                new_individuals_fitness[i] = individuals_fitness[index];
+            }
+            else 
+            {
+                index -= population_size;
+                new_individuals.row(i) = children.individuals.row(index);
+                new_individuals_decoded[i] = children.individuals_decoded[index];
+                new_individuals_fitness[i] = children.individuals_fitness[index];
+            }
         }
-        else 
+        
+        if (fittest_individual[1] < new_individuals_fitness[0]) 
         {
-            index -= current_population.population_size;
-            new_individuals.row(i) = children.individuals.row(index);
-            new_individuals_decoded[i] = children.individuals_decoded[index];
-            new_individuals_fitness[i] = children.individuals_fitness[index];
+            fittest_individual[0] = new_individuals_decoded[0];
+            fittest_individual[1] = new_individuals_fitness[0];
         }
+        
+        individuals = new_individuals;
+        individuals_decoded = new_individuals_decoded;
+        individuals_fitness = new_individuals_fitness;
     }
     
-    if (current_population.fittest_individual[1] < new_individuals_fitness[0]) 
-    {
-        current_population.fittest_individual[0] = new_individuals_decoded[0];
-        current_population.fittest_individual[1] = new_individuals_fitness[0];
-    }
-    
-    current_population.individuals = new_individuals;
-    current_population.individuals_decoded = new_individuals_decoded;
-    current_population.individuals_fitness = new_individuals_fitness;
-}
+};
 
 //' @title GA (Cpp)
 //' 
@@ -289,18 +224,18 @@ void survivor_selection(Population & current_population, const Population & chil
 //' @param maximum_number_of_iterations_equal The number of iterations without changing the fittest individual before forced convergence.
 //' @param trace TRUE/FALSE: Show trace?
 //' 
-//' @return A list with two elements: the fittest decoded individual found in the entire run and its fitness.
+//' @return A vector with two elements: the fittest decoded individual found in the entire run and its fitness.
 //' @export
-//' @example inst/examples/GACppExtended.R
+//' @example inst/examples/GACpp.R
 //[[Rcpp::export()]]
-Eigen::Vector2d GACppExtended(const int & population_size, const int & bitstring_size,
-                              Rcpp::Function fitness, const double & lower, const double & upper,
-                              const int & maximum_number_of_iterations, const double & tolerance,
-                              const int & maximum_number_of_iterations_equal, const bool & trace = false) 
+Eigen::Vector2d GA_Cpp(const int & population_size, const int & bitstring_size,
+                      const double & lower, const double & upper,
+                      const int & maximum_number_of_iterations, const double & tolerance,
+                      const int & maximum_number_of_iterations_equal, const bool & trace = false) 
 {
     Interval interval(lower, upper);
     RandomVariates random_variates(bitstring_size);
-    Population population(population_size, bitstring_size, random_variates, interval, fitness);
+    Population population(population_size, bitstring_size, random_variates, interval);
     
     int i = 0;
     int j = 0;
@@ -311,13 +246,13 @@ Eigen::Vector2d GACppExtended(const int & population_size, const int & bitstring
         
         // Parent selection
         Eigen::MatrixXd parents(2 * population_size, bitstring_size);
-        select_parents(population, parents, random_variates);
+        population.select_parents(parents);
         
         // Crossover and mutation
-        Population children(parents, random_variates, interval, fitness);
+        Population children(parents, random_variates, interval);
         
         // Survivor selection
-        survivor_selection(population, children, random_variates);
+        population.survivor_selection(children);
         
         double fitness_change = std::abs(population.fittest_individual[1] - fitness_old);
         if (fitness_change < tolerance) 

@@ -6,9 +6,9 @@
 
 using namespace Rcpp;
 
-// GACpp
-Eigen::Vector2d GACpp(const int& population_size, const int& bitstring_size, const double& lower, const double& upper, const int& maximum_number_of_iterations, const double& tolerance, const int& maximum_number_of_iterations_equal, const bool& trace);
-RcppExport SEXP _simpleGA_GACpp(SEXP population_sizeSEXP, SEXP bitstring_sizeSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP maximum_number_of_iterationsSEXP, SEXP toleranceSEXP, SEXP maximum_number_of_iterations_equalSEXP, SEXP traceSEXP) {
+// GA_Cpp
+Eigen::Vector2d GA_Cpp(const int& population_size, const int& bitstring_size, const double& lower, const double& upper, const int& maximum_number_of_iterations, const double& tolerance, const int& maximum_number_of_iterations_equal, const bool& trace);
+RcppExport SEXP _simpleGA_GA_Cpp(SEXP population_sizeSEXP, SEXP bitstring_sizeSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP maximum_number_of_iterationsSEXP, SEXP toleranceSEXP, SEXP maximum_number_of_iterations_equalSEXP, SEXP traceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -20,13 +20,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double& >::type tolerance(toleranceSEXP);
     Rcpp::traits::input_parameter< const int& >::type maximum_number_of_iterations_equal(maximum_number_of_iterations_equalSEXP);
     Rcpp::traits::input_parameter< const bool& >::type trace(traceSEXP);
-    rcpp_result_gen = Rcpp::wrap(GACpp(population_size, bitstring_size, lower, upper, maximum_number_of_iterations, tolerance, maximum_number_of_iterations_equal, trace));
+    rcpp_result_gen = Rcpp::wrap(GA_Cpp(population_size, bitstring_size, lower, upper, maximum_number_of_iterations, tolerance, maximum_number_of_iterations_equal, trace));
     return rcpp_result_gen;
 END_RCPP
 }
-// GACppExtended
-Eigen::Vector2d GACppExtended(const int& population_size, const int& bitstring_size, Rcpp::Function fitness, const double& lower, const double& upper, const int& maximum_number_of_iterations, const double& tolerance, const int& maximum_number_of_iterations_equal, const bool& trace);
-RcppExport SEXP _simpleGA_GACppExtended(SEXP population_sizeSEXP, SEXP bitstring_sizeSEXP, SEXP fitnessSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP maximum_number_of_iterationsSEXP, SEXP toleranceSEXP, SEXP maximum_number_of_iterations_equalSEXP, SEXP traceSEXP) {
+// GA_Cpp_with_R
+Eigen::Vector2d GA_Cpp_with_R(const int& population_size, const int& bitstring_size, Rcpp::Function fitness, const double& lower, const double& upper, const int& maximum_number_of_iterations, const double& tolerance, const int& maximum_number_of_iterations_equal, const bool& trace);
+RcppExport SEXP _simpleGA_GA_Cpp_with_R(SEXP population_sizeSEXP, SEXP bitstring_sizeSEXP, SEXP fitnessSEXP, SEXP lowerSEXP, SEXP upperSEXP, SEXP maximum_number_of_iterationsSEXP, SEXP toleranceSEXP, SEXP maximum_number_of_iterations_equalSEXP, SEXP traceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -39,14 +39,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const double& >::type tolerance(toleranceSEXP);
     Rcpp::traits::input_parameter< const int& >::type maximum_number_of_iterations_equal(maximum_number_of_iterations_equalSEXP);
     Rcpp::traits::input_parameter< const bool& >::type trace(traceSEXP);
-    rcpp_result_gen = Rcpp::wrap(GACppExtended(population_size, bitstring_size, fitness, lower, upper, maximum_number_of_iterations, tolerance, maximum_number_of_iterations_equal, trace));
+    rcpp_result_gen = Rcpp::wrap(GA_Cpp_with_R(population_size, bitstring_size, fitness, lower, upper, maximum_number_of_iterations, tolerance, maximum_number_of_iterations_equal, trace));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_simpleGA_GACpp", (DL_FUNC) &_simpleGA_GACpp, 8},
-    {"_simpleGA_GACppExtended", (DL_FUNC) &_simpleGA_GACppExtended, 9},
+    {"_simpleGA_GA_Cpp", (DL_FUNC) &_simpleGA_GA_Cpp, 8},
+    {"_simpleGA_GA_Cpp_with_R", (DL_FUNC) &_simpleGA_GA_Cpp_with_R, 9},
     {NULL, NULL, 0}
 };
 

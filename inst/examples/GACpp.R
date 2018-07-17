@@ -13,6 +13,7 @@ maximum_number_of_iterations_equal = 3
 tolerance = 1e-3
 trace = FALSE
 
-GACpp(population_size, bitstring_size, lower, upper,
-      maximum_number_of_iterations, tolerance, 
-      maximum_number_of_iterations_equal, trace)
+GA_Cpp(population_size, bitstring_size, 
+       lower, upper,
+       maximum_number_of_iterations, tolerance, 
+       maximum_number_of_iterations_equal, trace)

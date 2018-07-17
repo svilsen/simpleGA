@@ -1,16 +1,10 @@
-fitness <- function(x) 
-    x + abs(sin(4L * x))
-
-negative_fitness <- function(x) 
-    -x - abs(sin(4L * x))
-
 decoder <- function(x, lower, upper) {
     N = length(x)
     res = lower + (upper - lower) / (2^N - 1) * sum(2^seq(0, N - 1) * x)
     return(res)
 }
 
-initialise_population <- function(population_size, bitstring_size, lower, upper) {
+initialise_population <- function(population_size, bitstring_size, lower, upper, fitness) {
     individuals <-  matrix(sample(c(0, 1), population_size * bitstring_size, replace = TRUE), 
                            nrow = population_size, ncol = bitstring_size)
     decoded_individuals <- apply(individuals, 1, decoder, lower = lower, upper = upper)
@@ -55,7 +49,7 @@ crossover_mutation <- function(parents, lower, upper) {
     return(res)
 }
 
-survivor_selection <- function(population, children, lower, upper) {
+survivor_selection <- function(population, children, lower, upper, fitness) {
     children_decoded = apply(children, 1, decoder, lower = lower, upper = upper)
     children_fitness = fitness(children_decoded)
     
@@ -86,6 +80,7 @@ survivor_selection <- function(population, children, lower, upper) {
 #' 
 #' @param population_size The size of the population.
 #' @param bitstring_size The size of the individual.
+#' @param fitness A univariate function to be maximised.
 #' @param lower The lower bound of the interval.
 #' @param upper The upper bound of the interval.
 #' @param maximum_number_of_iterations The maximum allowed number of interations.
@@ -93,13 +88,14 @@ survivor_selection <- function(population, children, lower, upper) {
 #' @param maximum_number_of_iterations_equal The number of iterations without changing the fittest individual before forced convergence.
 #' @param trace TRUE/FALSE: Show trace?
 #' 
-#' @return A list with two elements: the fittest decoded individual found in the entire run and its fitness.
+#' @return A vector with two elements: the fittest decoded individual found in the entire run and its fitness.
 #' @export
 #' @example inst/examples/GAR.R
-GAR <- function(population_size, bitstring_size,
-                lower, upper, maximum_number_of_iterations, tolerance,
-                maximum_number_of_iterations_equal, trace = FALSE) {
-    population = initialise_population(population_size, bitstring_size, lower, upper)
+GA_R <- function(population_size, bitstring_size,
+                 fitness, lower, upper, 
+                 maximum_number_of_iterations, tolerance,
+                 maximum_number_of_iterations_equal, trace = FALSE) {
+    population = initialise_population(population_size, bitstring_size, lower, upper, fitness)
     
     i = 1
     j = 1
@@ -114,7 +110,7 @@ GAR <- function(population_size, bitstring_size,
         children = crossover_mutation(parents, lower, upper)
         
         ## Survivor selection
-        population = survivor_selection(population, children, lower, upper)
+        population = survivor_selection(population, children, lower, upper, fitness)
         
         fitness_change = abs(population$Fittest$Value - fitness_old)
         if (fitness_change < tolerance) 
