@@ -21,3 +21,23 @@ GACpp <- function(population_size, bitstring_size, lower, upper, maximum_number_
     .Call('_simpleGA_GACpp', PACKAGE = 'simpleGA', population_size, bitstring_size, lower, upper, maximum_number_of_iterations, tolerance, maximum_number_of_iterations_equal, trace)
 }
 
+#' @title GA (Cpp)
+#' 
+#' @description Simple genetic algorithm for maximising function. Implemented using the boost and Eigen libraries.
+#' 
+#' @param population_size The size of the population.
+#' @param bitstring_size The size of the individual.
+#' @param lower The lower bound of the interval.
+#' @param upper The upper bound of the interval.
+#' @param maximum_number_of_iterations The maximum allowed number of interations.
+#' @param tolerance The convergence tolerance.
+#' @param maximum_number_of_iterations_equal The number of iterations without changing the fittest individual before forced convergence.
+#' @param trace TRUE/FALSE: Show trace?
+#' 
+#' @return A list with two elements: the fittest decoded individual found in the entire run and its fitness.
+#' @export
+#' @example inst/examples/GACpp.R
+GACppExtended <- function(population_size, bitstring_size, fitness, lower, upper, maximum_number_of_iterations, tolerance, maximum_number_of_iterations_equal, trace = FALSE) {
+    .Call('_simpleGA_GACppExtended', PACKAGE = 'simpleGA', population_size, bitstring_size, fitness, lower, upper, maximum_number_of_iterations, tolerance, maximum_number_of_iterations_equal, trace)
+}
+
